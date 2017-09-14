@@ -24,8 +24,8 @@ int main(int argc, char* argv[])
 				if(check_file_path(argv[3]) == 0)
 				{
 					printf("Output file does not exist!!\n ---Begin reading!!!---\n");
-					storedPPM* inData = ppm_write(argv[2]);
-					int returned = ppm_read(inData, argv[1],argv[3]);
+					storedPPM* inData = ppm_read(argv[2]);
+					printf("Write returns: %d.\n",ppm_write(inData, argv[1],argv[3]));
 					// call the program
 					/*if(ppm_convert(argv[1],argv[2],argv[3])==0)
 					{

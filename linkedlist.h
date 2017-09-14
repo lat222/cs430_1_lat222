@@ -6,7 +6,7 @@
 
 
 /* A linked list node */
-typedef struct node
+typedef struct
 {
     // The metadata is stored in the node
     int R;
@@ -17,7 +17,7 @@ typedef struct node
 }node;
 
 // makes a node based on args and returns the new node
-node* make_node(char opChar, char* opCmd, int opCycleTime);
+node* make_node(int R, int G, int B);
 
 // inserts a node into the end of the linked list
 void insert_command(node *newNode, node *head);
