@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "converter.c"
 int main(int argc, char* argv[]) 
 {
 	// checks that the correct number of command line arguments were given
@@ -14,12 +15,31 @@ int main(int argc, char* argv[])
 		// check that the right PPM format is inputted
 		if (strcmp(argv[1],"3") == 0 || strcmp(argv[1],"6") == 0)
 		{
+			printf("PPM format is correct!!\n");
 			// check that the input file exists
 			if (check_file_path(argv[2]) == 1)
 			{
-
-				// check the output file
+				printf("Input file exists!!\n");
+				// check the output file does not exist
+				if(check_file_path(argv[3]) == 0)
+				{
+					printf("Output file does not exist!!\n ---Begin reading!!!---\n");
+					storedPPM* inData = ppm_write(argv[2]);
+					int returned = ppm_read(inData, argv[1],argv[3]);
 					// call the program
+					/*if(ppm_convert(argv[1],argv[2],argv[3])==0)
+					{
+						printf("Success!!\n");
+					}
+					else
+					{
+						fprintf(stderr, "Error: Files could not be converted");
+					}*/
+				}
+				else
+				{
+					fprintf(stderr, "Error: File with name %s exists and will not be overwritten.\n", argv[3]);
+				}
 			}
 			else
 			{
@@ -38,7 +58,7 @@ int main(int argc, char* argv[])
 
 int check_file_path(char* fp)	
 {
-	// should check if metadata and log file exists
+	// should check if input file exists
 	FILE *file;
     if ((file = fopen(fp, "r")))
     {
