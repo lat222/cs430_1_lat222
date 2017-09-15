@@ -8,23 +8,12 @@ typedef struct
     unsigned char R, G, B;
 }pixel;
 
-
+// below are global variables that will be accessible
 char* ppmFormat;
 int width;
 int height;
 int maxColor;
 pixel* pixMap;
-
-
-int ppm_read(char* inFile)
-{
-	
-}
-
-int ppm_write(char* ppmFormat, char* outFile)
-{
-	return 0;
-}
 
 int check_file_path(char* fp)	
 {
@@ -66,7 +55,7 @@ int read_header(FILE* fp)
 		    		{
 		    			case 0:
 		    				ppmFormat = (char*) malloc(sizeof(char)*2);
-		    				strcpy(ppmFormat,token);
+		    				strncpy(ppmFormat,token,2);
 		    				readHeader++;
 		    				break;
 
@@ -124,7 +113,7 @@ int read_p3(FILE* fp)
 		{
 			if(r > maxColor || g > maxColor || b > maxColor)
 			{
-				fprintf(stderr, "Error: R, G, or B is not within max color range.\n");
+				fprintf(stderr, "Error: R, G, or B of pixel %d is not within max color range.\n", pixelsSaved);
 				return 1;
 			}
 			pixMap[pixelsSaved].R = r;
@@ -145,26 +134,42 @@ int read_p3(FILE* fp)
 
 int read_p6(FILE* fp)
 {
+	unsigned char rawPixel[3];
+
+	int pixelsSaved = 0;
+
+	while(pixelsSaved < width*height)
+	{
+		if(fread(rawPixel, sizeof(unsigned char), 3, fp) == 3)
+		{
+			pixMap[pixelsSaved].R = rawPixel[0];
+			pixMap[pixelsSaved].G = rawPixel[1];
+			pixMap[pixelsSaved].B = rawPixel[2];
+			pixelsSaved++;
+		}
+		else
+		{
+			fprintf(stderr, "Error: R, G, or B of pixel %d is not within max color range.\n", pixelsSaved);
+			return 1;
+		}
+	}
 	return 0;
 }
 
 
-int write_p3(FILE* fp)
+void write_p3(FILE* fp)
 {
 	int pixelsWritten = 0;
 	while (pixelsWritten < height*width)
 	{
-		if((pixelsWritten % width) == width-1)
-		{
-			fprintf(fp, "%d %d %d\n", pixMap[pixelsWritten].R, pixMap[pixelsWritten].G, pixMap[pixelsWritten].B);
-		}
-		else
-		{
-			fprintf(fp, "%d %d %d\t", pixMap[pixelsWritten].R, pixMap[pixelsWritten].G, pixMap[pixelsWritten].B);
-		}
+		fprintf(fp, "%d\n%d\n%d\n", pixMap[pixelsWritten].R, pixMap[pixelsWritten].G, pixMap[pixelsWritten].B);
 		pixelsWritten++;
 	}
-	return 0;
+}
+
+void write_p6(FILE* fp)
+{
+	fwrite(pixMap, sizeof(pixel), height*width, fp);
 }
 
 int main(int argc, char* argv[]) 
@@ -221,11 +226,15 @@ int main(int argc, char* argv[])
 				//printf("Write returns: %d.\n",ppm_write(argv[1],argv[3]
 				fp = fopen(argv[3], "w");
 				// write in header
-				fprintf(fp, "%s\n%d %d\n%d\n", ppmFormat,height, width,maxColor);
-				if(write_p3(fp) != 0)
-				{
-					return 1;
-				}
+				fprintf(fp, "P%s\n%d %d\n%d\n", argv[1], width, height, maxColor);
+				if(strcmp(argv[1], "3")  == 0)
+					write_p3(fp);
+				else
+					write_p6(fp);
+
+
+				fclose(fp);
+	
 			}
 			else
 			{
