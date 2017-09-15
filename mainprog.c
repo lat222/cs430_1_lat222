@@ -62,7 +62,6 @@ int read_header(FILE* fp)
     			char* token = strtok(line, " \t");
     			while(token)
     			{
-    				printf("Token: %s\n", token);
     				switch(readHeader)
 		    		{
 		    			case 0:
@@ -112,13 +111,59 @@ int read_header(FILE* fp)
 
 }
 
+// read in a ppm with p3 format
 int read_p3(FILE* fp)
 {
+	int r,g,b;		// the ints that will store each pixels RGB values
+	int pixelsSaved = 0;	// stores the number of pixels already in memory
+	// loop through the entire pixels of the input file as defined by the file's height and width
+	while(pixelsSaved < width*height)
+	{
+		// save the incoming pixel
+		if(fscanf(fp,"%d", &r) != EOF && fscanf(fp,"%d", &g) != EOF && fscanf(fp,"%d", &b) != EOF)
+		{
+			if(r > maxColor || g > maxColor || b > maxColor)
+			{
+				fprintf(stderr, "Error: R, G, or B is not within max color range.\n");
+				return 1;
+			}
+			pixMap[pixelsSaved].R = r;
+			pixMap[pixelsSaved].G = g;
+			pixMap[pixelsSaved].B = b;
+			pixelsSaved++;
+			//printf("%d %d %d\n", pixMap[pixelsSaved].R,pixMap[pixelsSaved].G,pixMap[pixelsSaved].B);
+		}
+		else
+		{
+			fprintf(stderr, "Error: End of file reached before all pixels read.\n");
+			return 1;
+		}
+
+	}
 	return 0;
 }
 
 int read_p6(FILE* fp)
 {
+	return 0;
+}
+
+
+int write_p3(FILE* fp)
+{
+	int pixelsWritten = 0;
+	while (pixelsWritten < height*width)
+	{
+		if((pixelsWritten % width) == width-1)
+		{
+			fprintf(fp, "%d %d %d\n", pixMap[pixelsWritten].R, pixMap[pixelsWritten].G, pixMap[pixelsWritten].B);
+		}
+		else
+		{
+			fprintf(fp, "%d %d %d\t", pixMap[pixelsWritten].R, pixMap[pixelsWritten].G, pixMap[pixelsWritten].B);
+		}
+		pixelsWritten++;
+	}
 	return 0;
 }
 
@@ -135,51 +180,50 @@ int main(int argc, char* argv[])
 		// check that the right PPM format is inputted
 		if (strcmp(argv[1],"3") == 0 || strcmp(argv[1],"6") == 0)
 		{
-			printf("PPM format is correct!!\n");
-
 			// check that the input file exists
 			if (check_file_path(argv[2]) == 1)
 			{
-				printf("Input file exists!!\n");
-
-				// check the output file does not exist
-				if(check_file_path(argv[3]) == 0)
+				FILE* fp;
+				fp = fopen(argv[2], "r");
+				if(read_header(fp) == 0)
 				{
-					printf("Output file does not exist!!\n ---Begin reading!!!---\n");
-					FILE* fp;
-					fp = fopen(argv[2], "r");
-					if(read_header(fp) == 0)
+					pixMap = (pixel*) malloc(sizeof(pixel)*height*width);
+					// read in image pixels
+					if(strcmp("P3", ppmFormat) == 0)
 					{
-						pixMap = (pixel*) malloc(sizeof(pixel)*height*width);
-						// read in image pixels
-						if(strcmp("P3", ppmFormat) == 0)
+						if(read_p3(fp) == 1)
 						{
-							int returnVal = read_p3(fp);
+							return 1;
 						}
-						else if(strcmp("P6", ppmFormat) == 0)
+					}
+					else if(strcmp("P6", ppmFormat) == 0)
+					{
+						if(read_p6(fp) == 1)
 						{
-							int returnVal = read_p6(fp);
-						}
-						else
-						{
-							fprintf(stderr, "Error: PPM Format of input file should be P3 or P6 -- NOT %s\n", ppmFormat);
 							return 1;
 						}
 					}
 					else
 					{
-						fclose(fp);
+						fprintf(stderr, "Error: PPM Format of input file should be P3 or P6 -- NOT %s\n", ppmFormat);
 						return 1;
 					}
-
-				    fclose(fp);
-					
-
-					printf("Write returns: %d.\n",ppm_write(argv[1],argv[3]));
 				}
 				else
 				{
-					fprintf(stderr, "Error: File with name %s exists and will not be overwritten.\n", argv[3]);
+					fclose(fp);
+					return 1;
+				}
+
+			    fclose(fp);
+				
+
+				//printf("Write returns: %d.\n",ppm_write(argv[1],argv[3]
+				fp = fopen(argv[3], "w");
+				// write in header
+				fprintf(fp, "%s\n%d %d\n%d\n", ppmFormat,height, width,maxColor);
+				if(write_p3(fp) != 0)
+				{
 					return 1;
 				}
 			}
